@@ -1,0 +1,11 @@
+/target
+.*.swp
+*.svg
+*.txt
+*.lock
+profile.json
+*.pyc
+/__pycache__/
+*.bndb
+*.dylib
+/notes/
