@@ -17,15 +17,15 @@ class ValueType(object):
 
             if ok:
                 parents = set(ideco.get_parents(vars[ident].node_index))
-                all_parents = parents.copy()
+                # all_parents = parents.copy()
 
                 for (n, _) in layout[1:]:
                     ps = set(ideco.get_parents(vars[n].node_index))
                     parents = parents.intersection(ps)
-                    all_parents = all_parents.union(ps)
+                    # all_parents = all_parents.union(ps)
 
                 ok &= len(parents) > 0
-                ok &= any([any([ideco.descends_from(x, 'hlil.Call') for x in ideco.get_parents(p)]) for p in all_parents])
+                ok &= any([any([ideco.descends_from(x, 'hlil.Call') for x in ideco.get_parents(p)]) for p in parents])
 
             return ok
 

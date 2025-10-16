@@ -54,5 +54,6 @@ fn main() {
         let _ = ws.open_function(addr, 0.0, 0.0, 0.0, 0.0, app.lang.clone(), None, true, true);
         let func = &ws.functions[0];
         println!("{}", func.rerender());
+        // func.debug();
     }
 }

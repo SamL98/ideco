@@ -231,7 +231,10 @@ impl HlilNode {
 
             for (child_name, child) in children {
                 println!("{}{}:", " ".repeat(2 * (indent_level + 1)), child_name);
-                (*pool).borrow().get(*child).print_tree(pool.clone(), indent_level + 2);
+
+                if *child != self.idx {
+                    (*pool).borrow().get(*child).print_tree(pool.clone(), indent_level + 2);
+                }
             }
         } else if let Int(i) = &self.kind {
             println!("{}Int(0x{:x})", " ".repeat(2 * indent_level), i);

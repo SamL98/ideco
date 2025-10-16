@@ -617,7 +617,7 @@ loop {
 
         def __repr___loop(self):
             return ideco.eval_repr('''
-`for`:green ($key, $val) in $dict {
+`for`:green ($key, $val) `in`:green $dict {
     #%d
 }''' % self.body.node_index)
 

@@ -889,4 +889,8 @@ impl Function {
         let node = pb.get(self.root);
         node.raw_str(self.pool.clone())
     }
+
+    pub fn debug(&self) {
+        (*self.pool).borrow().get(self.root).print_tree(self.pool.clone(), 0);
+    }
 }
