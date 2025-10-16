@@ -63,6 +63,8 @@ impl Language {
             module.add_function(wrap_pyfunction!(find_all, &module).unwrap()).unwrap();
             module.add_function(wrap_pyfunction!(make_node, &module).unwrap()).unwrap();
             module.add_function(wrap_pyfunction!(make_seq, &module).unwrap()).unwrap();
+            module.add_function(wrap_pyfunction!(descends_from, &module).unwrap()).unwrap();
+            module.add_function(wrap_pyfunction!(node_type, &module).unwrap()).unwrap();
             module.add_function(wrap_pyfunction!(get_seq, &module).unwrap()).unwrap();
             module.add_function(wrap_pyfunction!(get_parents, &module).unwrap()).unwrap();
             module.add_function(wrap_pyfunction!(get_function, &module).unwrap()).unwrap();

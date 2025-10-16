@@ -571,10 +571,6 @@ pub fn lift(
         changed |= lift_desc(&desc, name, root, &mut visited, pool.clone(), ctx.clone(), lang.clone());
     }
 
-    if !options.remove_dead_code {
-        return changed;
-    }
-
     // HACK
     let n = (*pool).borrow().items.len();
     let mut num_uses = Vec::new();
@@ -587,6 +583,10 @@ pub fn lift(
     let mut buf = vec![(root, None, false)];
 
     while let Some((idx, parent, is_lhs)) = buf.pop() {
+        if Some(idx) == parent {
+            continue;
+        }
+
         let is_hidden = (*pool).borrow().get(idx).is_hidden;
 
         if let Some(p) = parent {
@@ -613,6 +613,10 @@ pub fn lift(
                 }
             }
         }
+    }
+
+    if !options.remove_dead_code {
+        return changed;
     }
 
     for idx in 0..n {

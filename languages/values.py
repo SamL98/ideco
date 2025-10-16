@@ -17,7 +17,15 @@ class ValueType(object):
 
             if ok:
                 parents = set(ideco.get_parents(vars[ident].node_index))
-                ok &= all([len(set(ideco.get_parents(vars[n].node_index)).intersection(parents)) > 0 for (n, _) in layout[1:]])
+                all_parents = parents.copy()
+
+                for (n, _) in layout[1:]:
+                    ps = set(ideco.get_parents(vars[n].node_index))
+                    parents = parents.intersection(ps)
+                    all_parents = all_parents.union(ps)
+
+                ok &= len(parents) > 0
+                ok &= any([any([ideco.descends_from(x, 'hlil.Call') for x in ideco.get_parents(p)]) for p in all_parents])
 
             return ok
 
@@ -98,7 +106,7 @@ class ValueType(object):
             return ok and vars[ident].data_type.name == node_name
 
         def __repr___decl(self):
-            return ideco.eval_repr('${var0.data_type} $var0 = $%s' % ident)
+            return ideco.eval_repr('(${var0.data_type}, ${var1.data_type}) ($var0, $var1) = ($field1, $field2)')
 
         def init_decl(self):
             ideco.set_type(self.var0, node_name)
@@ -217,6 +225,7 @@ class ValueType(object):
 
         type_desc = type(node_name, (hlil.DataType,), {'name': node_name, 'layout': layout, '__repr__': __repr___type})
         return (type_desc, [use, copy, copy_struct, decl_copy_struct, partial_copy, partial_copy_decl, decl])
+        # return (type_desc, [use, copy, copy_struct, decl_copy_struct, decl])
 
 TYPE_COUNTER = 1
 

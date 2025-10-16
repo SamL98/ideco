@@ -96,6 +96,35 @@ pub fn get_parents(node_idx: usize) -> PyResult<PyObject> {
 
 #[allow(deprecated)]
 #[pyfunction]
+pub fn node_type(node_idx: usize) -> PyResult<PyObject> {
+    Ok(Python::with_gil(|py| {
+        let sys = py.import("sys").unwrap();
+        let ideco = sys.getattr("modules").unwrap().get_item("ideco").unwrap();
+        let ideco = ideco.extract::<Bound<PyAny>>().unwrap();
+        let pool = ideco.getattr("pool").unwrap().extract::<Py<PyPoolWrapper>>().unwrap().borrow(py).inner.inner.clone();
+        let p = pool.clone();
+        let pb = p.borrow();
+        pb.get(node_idx).name.clone().unwrap_or("NONE".to_string()).to_object(py)
+    }))
+}
+
+#[allow(deprecated)]
+#[pyfunction]
+pub fn descends_from(idx: usize, node_type: &str) -> PyResult<PyObject> {
+    Ok(Python::with_gil(|py| {
+        let sys = py.import("sys").unwrap();
+        let ideco = sys.getattr("modules").unwrap().get_item("ideco").unwrap();
+        let ideco = ideco.extract::<Bound<PyAny>>().unwrap();
+        let pool = ideco.getattr("pool").unwrap().extract::<Py<PyPoolWrapper>>().unwrap().borrow(py).inner.inner.clone();
+
+        let p = pool.clone();
+        let pb = p.borrow();
+        pb.items[idx].descends_from(node_type).to_object(py)
+    }))
+}
+
+#[allow(deprecated)]
+#[pyfunction]
 pub fn get_seq(idx: usize) -> PyResult<PyObject> {
     Ok(Python::with_gil(|py| {
         let sys = py.import("sys").unwrap();
