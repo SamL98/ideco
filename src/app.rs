@@ -10,6 +10,7 @@ use crate::pool::*;
 use crate::template::*;
 use crate::serialization::default_language;
 use crate::workspace::Workspace;
+use crate::function::LiftingOptions;
 use crate::Args;
 
 use std::collections::{HashSet, HashMap};
@@ -340,6 +341,8 @@ pub struct App {
 
 	#[serde(skip)]
     pub addr2func: HashMap<u64, HashMap<String, JsonValue>>,
+
+    pub options: LiftingOptions,
 }
 
 //impl App {
@@ -394,7 +397,10 @@ impl App {
             addr2func.insert(obj_addr as u64, obj_json.clone());
         }
 
-		let mut workspace = Workspace::new("Default Workspace", name2addr.clone(), addr2func.clone());
+        let options = LiftingOptions {
+            remove_dead_code: args.remove_dead_code,
+        };
+		let mut workspace = Workspace::new("Default Workspace", name2addr.clone(), addr2func.clone(), options.clone());
         let _ = workspace.open_function(args.addr, 0.0, 0.0, 0.0, 0.0, lang.clone(), None, true, true);
 
 		App {
@@ -404,6 +410,7 @@ impl App {
 			has_run_init: false,
             name2addr,
             addr2func,
+            options,
 		}
     }
 }

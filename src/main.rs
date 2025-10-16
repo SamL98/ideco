@@ -37,6 +37,9 @@ pub struct Args {
     #[arg(short = 'a', long = "addr")]
     #[clap(value_parser = parse_hex)]
     addr: u64,
+
+    #[arg(long = "dce")]
+    remove_dead_code: bool,
 }
 
 fn main() {

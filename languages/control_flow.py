@@ -2,6 +2,33 @@ import ideco
 import hlil
 import base
 
+class UnoptimizedIf(hlil.Stmt):
+    dt: base.DataType
+    flag: hlil.Var
+    condition: hlil.Expr
+    body: hlil.Stmt
+
+    @staticmethod
+    def first_token():
+        return 'type:DataType'
+
+    @staticmethod
+    def match():
+        return ideco.eval_tmpl('''
+$dt $flag = 0x1
+if ($condition) {
+    $flag = 0x0
+}
+if ($flag == 0x0) {
+    $body
+}''')[0]
+
+    def __repr__(self):
+        return ideco.eval_repr('''
+`if`:green ($condition) {
+    $body
+}''')
+
 class InfiniteLoop(hlil.Stmt):
     body: hlil.Block
 

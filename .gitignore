@@ -2,7 +2,6 @@
 .*.swp
 *.svg
 *.txt
-*.lock
 profile.json
 *.pyc
 /__pycache__/

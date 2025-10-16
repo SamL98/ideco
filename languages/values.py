@@ -287,3 +287,35 @@ $dt $var
     @staticmethod
     def first_token():
         return 'type:DataType'
+
+class InitLargeValueType(hlil.VarInit):
+    dt: base.DataType
+    output: hlil.Var
+    func: hlil.Symbol
+    args: list[hlil.Expr]
+
+    @staticmethod
+    def match():
+        ok, vars = ideco.eval_tmpl('''
+$dt $output
+$func(&$output, ${args*<, >})''')
+        return ok and 'memcpy' not in vars['func'].name
+
+    def init(self):
+        global TYPE_COUNTER
+        dt_name = 'Type_%d' % TYPE_COUNTER
+
+        def __repr___type(self):
+            return ideco.eval_repr(dt_name)
+
+        dt = type(dt_name, (hlil.DataType,), {'name': dt_name, '__repr__': __repr___type})
+        TYPE_COUNTER += 1
+
+        ideco.set_type(self.output, dt.name)
+
+    def __repr__(self):
+        return ideco.eval_repr('${output.data_type} $output = $func(${args*<, >})')
+
+    @staticmethod
+    def first_token():
+        return 'type:DataType'

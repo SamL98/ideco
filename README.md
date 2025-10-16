@@ -31,6 +31,7 @@ In the project root run `cargo run [--release]` with the following arguments:
 * --addr/-a: Address of the function to process.
 * --modules/-m: Pass for each module to use (e.g. `-m values -m swift`).
 * --gui/-g: Optional if the function should be displayed in the gui after processing (experimental).
+* --dce: Whether or not to perform dead code elimination (unused assignments).
 
 To test new rules, simply edit or create a new module in the `languages` folder with your new rules and pass tell ideco to use it with the `-m` argument.
 

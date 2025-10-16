@@ -17,6 +17,12 @@ use std::rc::Rc;
 use std::cell::Ref;
 use std::cell::RefCell;
 
+#[derive(Clone, Debug, Default)]
+#[derive(serde::Deserialize, serde::Serialize)]
+pub struct LiftingOptions {
+    pub remove_dead_code: bool,
+}
+
 pub struct TemplateWrapper {
     pub pool: Rc<RefCell<NodePool>>,
     pub lang: Rc<Language>,
@@ -107,40 +113,21 @@ pub fn get_seq_idx(
 ) -> usize {
     // let mut cands = HashMap::new();
 
-    for old_idx in old_idxs {
-        let node = (*pool).borrow().get(*old_idx).clone();
+    let p = pool.clone();
+    let pb = (*p).borrow();
+    let n = pb.items.len();
 
-        for parent_idx in &node.parents {
-            if let Some(seq) = get_seq(&(*pool).borrow(), *parent_idx) {
-                if seq.iter().position(|i| i == old_idx).is_some() {
-                    // *cands.entry(*parent_idx).or_insert(0) += 1;
-
-                    let mut ok = true;
-                    for elem_idx in old_idxs {
-                        if seq.iter().position(|i| i == elem_idx).is_none() {
-                            ok = false;
-                        }
-                    }
-
-                    if !ok {
-                        continue;
-                    }
-
-                    return *parent_idx;
-                }
+    for i in 0..n {
+        if let HlilKind::Seq(seq) = &pb.items[i].kind {
+            if old_idxs.iter().all(|j| seq.contains(j)) {
+                return i;
             }
         }
     }
 
-    // for (parent_idx, num) in &cands {
-    //     if *num == old_idxs.len() {
-    //         return *parent_idx;
-    //     }
-    // }
-
     for idx in old_idxs {
         let node = (*pool).borrow().get(*idx).clone();
-        println!("  {:?}: {}", node.name, node.str(pool.clone()));
+        println!("{:?}: {}", node.name, node.str(pool.clone()));
     }
 
     for idx in old_idxs {
@@ -149,10 +136,10 @@ pub fn get_seq_idx(
         for parent_idx in &node.parents {
             if let Some(seq) = get_seq(&(*pool).borrow(), *parent_idx) {
                 for elem in seq {
-                    println!("    {}", (*pool).borrow().get(elem).str(pool.clone()));
+                    println!("{}", (*pool).borrow().get(elem).str(pool.clone()));
                 }
             }
-            println!("    ========================");
+            println!("========================");
         }
     }
     // for (parent_idx, num) in cands {
@@ -437,6 +424,7 @@ pub fn lift_desc_at(
                 end = None;
             }
         } else {
+            println!("*** Did not match any indices");
             end = None;
         }
     });
@@ -559,6 +547,7 @@ pub fn lift(
     pool: Rc<RefCell<NodePool>>,
     ctx: Rc<RefCell<TemplateContext>>,
     lang: Rc<RefCell<Language>>,
+    options: &LiftingOptions,
 ) -> bool {
     let mut changed = false;
     let modules = (*lang).borrow().modules.clone();
@@ -580,6 +569,10 @@ pub fn lift(
     for (name, desc) in all_descriptors {
         // println!("  === Scanning for matches for {}", name);
         changed |= lift_desc(&desc, name, root, &mut visited, pool.clone(), ctx.clone(), lang.clone());
+    }
+
+    if !options.remove_dead_code {
+        return changed;
     }
 
     // HACK
@@ -666,6 +659,7 @@ pub struct Function {
 	pub var_map: HashMap<NodeIndex, NodeIndex>,
 
 	pub xrefs: HashSet<(u64, u64)>,
+    pub options: LiftingOptions,
 }
 
 impl Default for Function {
@@ -678,6 +672,7 @@ impl Default for Function {
 			folded_exprs: Rc::new(RefCell::new(HashSet::default())),
 			var_map: HashMap::default(),
 			xrefs: HashSet::default(),
+            options: LiftingOptions::default(),
 		}
 	}
 }
@@ -686,6 +681,7 @@ pub fn get_repr_context(
     p: Rc<RefCell<NodePool>>,
     hlil: NodeIndex,
     lang: Rc<RefCell<Language>>,
+    options: &LiftingOptions,
 ) -> Rc<RefCell<ReprContext>> {
     let repr_ctx = ReprContext::new();
     let repr_c = Rc::new(RefCell::new(repr_ctx));
@@ -701,7 +697,7 @@ pub fn get_repr_context(
 
     let tmpl_c = Rc::new(RefCell::new(TemplateContext { repr_ctx: repr_c.clone() }));
 
-    let mut changed = lift(hlil, p.clone(), tmpl_c, lang.clone());
+    let mut changed = lift(hlil, p.clone(), tmpl_c, lang.clone(), options);
     // changed |= optimize(p.clone(), k
 
     while changed {
@@ -719,7 +715,7 @@ pub fn get_repr_context(
         }
 
         let tmpl_c = Rc::new(RefCell::new(TemplateContext { repr_ctx: repr_c.clone() }));
-        changed = lift(hlil, p.clone(), tmpl_c, lang.clone());
+        changed = lift(hlil, p.clone(), tmpl_c, lang.clone(), options);
     }
 
     log("LIFT", "set_finished".to_string());
@@ -744,6 +740,7 @@ impl Function {
         func_json: &HashMap<String, JsonValue>,
 		lang: Rc<RefCell<Language>>,
 		params: Option<(Vec<NodeIndex>, Rc<RefCell<NodePool>>)>,
+        options: LiftingOptions,
 	) -> Self {
 		let mut pool = NodePool::new();
 		let mut var_map = HashMap::default();
@@ -797,7 +794,7 @@ impl Function {
         pool.set_type(hlil, &output_type, &*lang);
 
 		let p = Rc::new(RefCell::new(pool));
-        let repr_c = get_repr_context(p.clone(), hlil, lang.clone());
+        let repr_c = get_repr_context(p.clone(), hlil, lang.clone(), &options);
 
 		Function {
 			addr: addr,
@@ -807,6 +804,7 @@ impl Function {
 			folded_exprs: Rc::new(RefCell::new(HashSet::default())),
 			var_map: var_map,
 			xrefs: xrefs,
+            options,
 		}
 	}
 
@@ -814,7 +812,7 @@ impl Function {
 		let p = Rc::new(RefCell::new(NodePool::new()));
         let mut var_map = HashMap::new();
         let hlil = deep_copy_ref(p.clone(), idx, self.pool.clone(), &mut var_map, false);
-        let repr_c = get_repr_context(p.clone(), hlil, lang);
+        let repr_c = get_repr_context(p.clone(), hlil, lang, &self.options);
 
 		Function {
 			addr: self.addr,
@@ -824,6 +822,7 @@ impl Function {
 			folded_exprs: Rc::new(RefCell::new(HashSet::default())),
 			var_map: var_map,
 			xrefs: HashSet::default(),
+            options: self.options.clone(),
 		}
     }
 

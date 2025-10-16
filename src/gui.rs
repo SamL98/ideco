@@ -53,7 +53,7 @@ impl eframe::App for App {
 
                     if ui.button("+").clicked() {
                         let ws_name = format!("Workspace {}", self.workspaces.len() + 1);
-                        self.workspaces.push(Workspace::new(ws_name.as_str(), self.name2addr.clone(), self.addr2func.clone()));
+                        self.workspaces.push(Workspace::new(ws_name.as_str(), self.name2addr.clone(), self.addr2func.clone(), self.options.clone()));
                         self.selected_idx = self.workspaces.len() - 1;
                     }
 

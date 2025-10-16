@@ -39,6 +39,8 @@ pub struct Workspace {
 
 	#[serde(skip)]
     pub addr2func: HashMap<u64, HashMap<String, JsonValue>>,
+
+    pub options: LiftingOptions,
 }
 
 impl Default for Workspace {
@@ -57,6 +59,7 @@ impl Default for Workspace {
             show_right_panel: false,
             name2addr: HashMap::new(),
             addr2func: HashMap::new(),
+            options: LiftingOptions::default(),
 		}
 	}
 }
@@ -87,7 +90,7 @@ impl DecompilationWindow {
 		self.selected_range = None;
 		self.token_rects.clear();
 
-        func.repr_ctx = get_repr_context(func.pool.clone(), func.root, lang);
+        func.repr_ctx = get_repr_context(func.pool.clone(), func.root, lang, &self.options);
         let _ = func.rerender();
 	}
 }
@@ -109,11 +112,13 @@ impl Workspace {
         name: &str,
         name2addr: HashMap<String, u64>,
         addr2func: HashMap<u64, HashMap<String, JsonValue>>,
+        options: LiftingOptions,
     ) -> Self {
         let mut ws = Workspace::default();
         ws.name = name.to_string();
         ws.name2addr = name2addr;
         ws.addr2func = addr2func;
+        ws.options = options;
         ws
 	}
 
@@ -169,7 +174,7 @@ impl Workspace {
         is_visible: bool,
 	) -> WindowIndex {
         let func_json = &self.addr2func[&addr];
-        let func = Function::new(addr, func_json, lang, params);
+        let func = Function::new(addr, func_json, lang, params, self.options.clone());
         let func_idx = self.functions.len();
         self.functions.push(func);
         self.display_function(func_idx, x, y, w, h, is_top_level, is_visible)

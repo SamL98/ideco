@@ -5,6 +5,7 @@ use egui;
 use egui::{Pos2, Rect};
 
 use crate::pool::{NodeIndex, NodePool};
+use crate::function::LiftingOptions;
 use crate::lang::Language;
 
 use std::rc::Rc;
@@ -84,6 +85,7 @@ pub struct DecompilationWindow {
     pub yank: bool,
 	#[serde(skip)]
     pub addr2func: HashMap<u64, HashMap<String, JsonValue>>,
+    pub options: LiftingOptions,
 }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
@@ -161,6 +163,7 @@ impl Default for DecompilationWindow {
 			was_selected: false,
             yank: false,
             addr2func: HashMap::new(),
+            options: LiftingOptions::default(),
 		}
 	}
 }
